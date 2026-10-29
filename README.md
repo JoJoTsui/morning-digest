@@ -8,7 +8,8 @@ Each file in `editions/` is one day's digest, written by the pipeline that
 collects the sources and composes the digest itself. There is no model in the
 render path, so no provider error can take down a digest.
 
-- [RSS feed](feed.xml)
+- [Read the website](https://jojotsui.github.io/morning-digest/)
+- [RSS feed](https://jojotsui.github.io/morning-digest/feed.xml)
 - Latest edition: see `editions/`
 
 ## What is in a digest
@@ -19,6 +20,10 @@ render path, so no provider error can take down a digest.
 | Wikipedia | The front pages' news, current events, featured articles, "did you know", and "on this day" |
 | 科技爱好者周刊 | The newest weekly issue's editorial lead and its curated links |
 | Decoding Bio | The newest newsletter post and its lead paragraph |
+| AI4Science | Research roundups with article excerpts |
+| Inside Valence (Valence Labs) | Affiliated lab research and methods |
+| Scaling Biotech | Biological data and AI adoption analysis |
+| BioML Digest (automated) | Paper titles and DOI/arXiv links from an automated digest |
 
 ## Privacy
 

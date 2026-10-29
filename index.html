@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A focused daily reading list at the intersection of biology and AI.">
+    <meta name="color-scheme" content="light dark">
+    <title>Bio × AI — Morning Digest</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23176a52'/%3E%3Ctext x='32' y='41' text-anchor='middle' fill='white' font-family='sans-serif' font-size='24'%3EB%C3%97A%3C/text%3E%3C/svg%3E">
+    <link rel="alternate" type="application/rss+xml" title="Morning Digest" href="feed.xml">
+    <link rel="stylesheet" href="assets/style.css">
+    <script src="assets/markdown-it.min.js" defer></script>
+    <script src="assets/app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to digest</a>
+    <div class="layout">
+      <aside class="sidebar" aria-label="Digest navigation">
+        <a class="brand" href="./" aria-label="Bio and AI, latest morning digest">
+          <span class="brand-mark" aria-hidden="true">B<span>×</span>A</span>
+          <span class="brand-name">Bio × AI<span>Morning Digest</span></span>
+        </a>
+        <p class="sidebar-description">A daily reading list for the intersection of biology and artificial intelligence.</p>
+        <nav class="archive" aria-labelledby="archive-title">
+          <div class="sidebar-heading"><h2 id="archive-title">Recent editions</h2><span class="live-dot" aria-hidden="true"></span></div>
+          <ol id="edition-list" class="edition-list"><li class="muted">Loading editions…</li></ol>
+          <a class="archive-link" href="https://github.com/JoJoTsui/morning-digest/tree/main/editions" target="_blank" rel="noopener noreferrer">Full archive <span aria-hidden="true">↗</span></a>
+        </nav>
+        <div class="sidebar-footer">
+          <label class="theme-control" for="theme">Appearance
+            <select id="theme"><option value="system">System</option><option value="light">Light</option><option value="dark">Dark</option></select>
+          </label>
+          <div class="footer-links"><a href="feed.xml">RSS feed ↗</a><a href="https://github.com/JoJoTsui/morning-digest" target="_blank" rel="noopener noreferrer">On GitHub ↗</a></div>
+          <p>Collected daily. Made for reading.</p>
+        </div>
+      </aside>
+      <main id="main" class="main" tabindex="-1">
+        <header class="hero">
+          <div class="eyebrow"><span class="live-dot" aria-hidden="true"></span> THE PUBLIC EDITION</div>
+          <div class="hero-title-row"><div><h1>Morning Digest<span class="title-period">.</span></h1><p id="edition-label" class="edition-label">Biology. AI. The ideas worth your time.</p></div><span class="hero-symbol" aria-hidden="true">✳</span></div>
+          <form id="date-form" class="date-form"><label for="edition-date">Read an edition</label><input id="edition-date" type="date" required aria-label="Edition date"><button type="submit">Open <span aria-hidden="true">↗</span></button></form>
+        </header>
+        <section id="reading-controls" class="reading-controls" aria-label="Filter this edition" hidden>
+          <div class="search-wrap"><span aria-hidden="true">⌕</span><label class="sr-only" for="search">Search this edition</label><input id="search" type="search" placeholder="Search this edition…" autocomplete="off"><kbd aria-hidden="true">/</kbd></div>
+          <div id="source-filters" class="source-filters" aria-label="Filter by source"></div>
+          <p id="filter-summary" class="filter-summary" aria-live="polite" aria-atomic="true"></p>
+        </section>
+        <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true">Loading the latest edition…</p>
+        <div id="digest" class="digest" aria-label="Edition content"></div>
+        <p id="no-results" class="empty-state" hidden>No matching entries in this edition. Try another search or source.</p>
+        <noscript><p class="empty-state">Enable JavaScript to read and filter editions here, or <a href="https://github.com/JoJoTsui/morning-digest/tree/main/editions">browse the Markdown archive on GitHub</a>.</p></noscript>
+        <footer class="main-footer"><span>Bio × AI · Morning Digest</span><a id="markdown-link" hidden>Read original Markdown ↗</a><a class="back-top" href="#main">Back to top ↑</a></footer>
+      </main>
+    </div>
+  </body>
+</html>
