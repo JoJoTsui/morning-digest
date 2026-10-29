@@ -25,6 +25,11 @@ render path, so no provider error can take down a digest.
 | Scaling Biotech | Biological data and AI adoption analysis |
 | BioML Digest (automated) | Paper titles and DOI/arXiv links from an automated digest |
 
+Highlights focus on bio × AI. GitHub links are grouped by repository, Wikipedia
+appears last as a reference block, and 科技爱好者周刊 appears in Friday editions.
+For additional daily AI news, read [AIHOT 热点](https://aihot.news/hot) on its
+original site; its headlines are kept in the personal digest only.
+
 ## Privacy
 
 This repository is public. The personal section — the reader's own repositories

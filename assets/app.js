@@ -1,4 +1,4 @@
-/* The site reads the public edition files directly; it has no build or API service. */
+/* Pre-rendered reading, progressively enhanced with filters and archive navigation. */
 (function (root) {
   'use strict';
 
@@ -42,13 +42,74 @@
     return renderer;
   }
 
-  if (typeof module === 'object' && module.exports) module.exports = { createMarkdownRenderer, isSafeUrl, isValidDate };
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, function (character) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character];
+    });
+  }
+
+  function inlineText(tokens) {
+    return (tokens || []).map(function (token) {
+      return token.children ? inlineText(token.children) : token.content;
+    }).join('');
+  }
+
+  function renderEdition(markdown, renderer) {
+    renderer = renderer || createMarkdownRenderer();
+    const tokens = renderer.parse(markdown, {});
+    const intro = [];
+    const notes = [];
+    const sections = [];
+    let current = intro;
+    for (let index = 0; index < tokens.length;) {
+      const first = tokens[index];
+      let end = index + 1;
+      if (first.nesting === 1) {
+        while (end < tokens.length && !(tokens[end].level === first.level && tokens[end].nesting === -1)) end += 1;
+        end += 1;
+      }
+      const block = tokens.slice(index, end);
+      const text = inlineText(block.filter(function (token) { return token.type === 'inline'; }));
+      if (first.type === 'heading_open' && first.tag === 'h1') {
+        // The page header already contains the edition title.
+      } else if (first.type === 'heading_open' && first.tag === 'h2') {
+        const section = { id: 'section-' + sections.length, title: text, blocks: [], highlight: /today[’']s highlights|bio\s*[×x]\s*ai highlights/i.test(text), wikipedia: /\bWikipedia\b|维基百科/i.test(text) };
+        sections.push(section);
+        current = section.blocks;
+      } else if (first.type === 'paragraph_open' && /^🗑️?/.test(text.trim())) {
+        notes.push(block);
+      } else {
+        if (first.type === 'paragraph_open' && /^⚠️?/.test(text.trim())) first.attrSet('class', 'source-warning');
+        current.push(block);
+      }
+      index = end;
+    }
+    const renderBlocks = function (blocks) { return blocks.map(function (block) { return renderer.renderer.render(block, renderer.options, {}); }).join(''); };
+    const renderSection = function (section) {
+      const count = section.blocks.reduce(function (total, block) {
+        const first = block[0];
+        if (first.type === 'bullet_list_open' || first.type === 'ordered_list_open') return total + block.filter(function (token) { return token.type === 'list_item_open' && token.level === first.level + 1; }).length;
+        return total + (['paragraph_open', 'blockquote_open', 'fence', 'code_block', 'table_open'].includes(first.type) ? 1 : 0);
+      }, 0);
+      const classes = (section.highlight ? 'highlights' : 'source-section') + (section.wikipedia ? ' wikipedia-section' : '') + ' prose';
+      const entryLabel = /\bGitHub\b/i.test(section.title) ? ' grouped entries' : ' entries';
+      const badge = section.highlight ? '' : '<span class="section-count" aria-label="' + count + entryLabel + '">' + count + '</span>';
+      return '<section class="' + classes + '" data-title="' + escapeHtml(section.title) + '" data-count="' + count + '" aria-labelledby="' + section.id + '"><h2 id="' + section.id + '">' + escapeHtml(section.title) + badge + '</h2>' + renderBlocks(section.blocks) + '</section>';
+    };
+    const introduction = renderBlocks(intro);
+    return (introduction.trim() ? '<div class="edition-intro prose">' + introduction + '</div>' : '') +
+      sections.filter(function (section) { return !section.wikipedia; }).map(renderSection).join('') +
+      (notes.length ? '<details class="selection-notes prose"><summary>Selection notes</summary>' + renderBlocks(notes) + '</details>' : '') +
+      sections.filter(function (section) { return section.wikipedia; }).map(renderSection).join('');
+  }
+
+  if (typeof module === 'object' && module.exports) module.exports = { createMarkdownRenderer, renderEdition, escapeHtml, isSafeUrl, isValidDate };
   if (!root.document) return;
 
   const document = root.document;
   const byId = function (id) { return document.getElementById(id); };
   const siteRoot = new URL('.', root.location.href);
-  const state = { dates: [], selected: '', source: 'all', sections: [], controller: null, request: 0, renderer: null };
+  const state = { dates: [], selected: '', source: 'all', sections: [], controller: null, request: 0, renderer: null, rendererPromise: null, editions: new Map() };
   const dateFormat = new Intl.DateTimeFormat('en', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' });
   const shortDateFormat = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 
@@ -80,6 +141,8 @@
 
   function renderArchive() {
     const list = byId('edition-list');
+    const restoreArchiveFocus = list.contains(document.activeElement);
+    let selectedLink = null;
     list.replaceChildren();
     if (!state.dates.length) {
       const item = document.createElement('li');
@@ -99,7 +162,10 @@
       detail.className = 'edition-detail';
       detail.textContent = index === 0 ? 'Latest' : date.slice(0, 4);
       link.append(label, detail);
-      if (date === state.selected) link.setAttribute('aria-current', 'page');
+      if (date === state.selected) {
+        link.setAttribute('aria-current', 'page');
+        selectedLink = link;
+      }
       link.addEventListener('click', function (event) {
         if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
@@ -108,73 +174,34 @@
       item.append(link);
       list.append(item);
     });
+    if (restoreArchiveFocus && selectedLink) selectedLink.focus({ preventScroll: true });
   }
 
-  function sectionItemCount(section) {
-    return Array.from(section.children).reduce(function (count, element) {
-      if (element.matches('ul, ol')) return count + element.children.length;
-      if (element.matches('p, blockquote, pre, table')) return count + 1;
-      return count;
-    }, 0);
-  }
-
-  function buildEdition(markdown) {
-    const template = document.createElement('template');
-    template.innerHTML = state.renderer.render(markdown);
-    const digest = byId('digest');
-    digest.replaceChildren();
-    state.sections = [];
+  function hydrateEdition() {
     state.source = 'all';
     byId('search').value = '';
-    const intro = document.createElement('div');
-    intro.className = 'edition-intro prose';
-    intro.dataset.kind = 'intro';
-    let current = intro;
-    digest.append(intro);
-    const notes = document.createElement('details');
-    notes.className = 'selection-notes prose';
-    const notesSummary = document.createElement('summary');
-    notesSummary.textContent = 'Selection notes';
-    notes.append(notesSummary);
-
-    Array.from(template.content.childNodes).forEach(function (node) {
-      if (node.nodeType !== 1) { current.append(node); return; }
-      if (node.matches('h1')) return;
-      if (node.matches('h2')) {
-        const title = node.textContent.trim();
-        const highlight = /today[’']s highlights/i.test(title);
-        current = document.createElement('section');
-        current.className = (highlight ? 'highlights' : 'source-section') + ' prose';
-        const id = 'section-' + state.sections.length;
-        node.id = id;
-        current.setAttribute('aria-labelledby', id);
-        current.dataset.kind = highlight ? 'highlights' : 'source';
-        current.append(node);
-        digest.append(current);
-        state.sections.push({ id: id, title: title, element: current, highlight: highlight, count: 0 });
-      } else if (node.matches('p') && /^🗑️?/.test(node.textContent.trim())) {
-        notes.append(node);
-      } else {
-        current.append(node);
-      }
-    });
-    if (!intro.textContent.trim()) intro.remove();
-    if (notes.children.length > 1) digest.append(notes);
-    digest.querySelectorAll('p, li, blockquote').forEach(function (element) {
-      if (/^⚠️?/.test(element.textContent.trim())) element.classList.add('source-warning');
-    });
-    state.sections.forEach(function (section) {
-      section.count = sectionItemCount(section.element);
-      if (!section.highlight) {
-        const badge = document.createElement('span');
-        badge.className = 'section-count';
-        badge.textContent = String(section.count);
-        badge.setAttribute('aria-label', section.count + ' entries');
-        section.element.querySelector('h2').append(badge);
-      }
+    state.sections = Array.from(byId('digest').querySelectorAll('.source-section, .highlights')).map(function (element) {
+      return { id: element.querySelector('h2').id, title: element.dataset.title, element: element, highlight: element.classList.contains('highlights'), count: Number(element.dataset.count) };
     });
     renderFilters();
     applyFilters();
+  }
+
+  function ensureRenderer() {
+    if (state.renderer) return Promise.resolve(state.renderer);
+    if (!state.rendererPromise) {
+      state.rendererPromise = new Promise(function (resolve, reject) {
+        const script = document.createElement('script');
+        script.src = new URL('assets/markdown-it.min.js', siteRoot).href;
+        script.onload = function () {
+          try { state.renderer = createMarkdownRenderer(); resolve(state.renderer); }
+          catch (error) { state.rendererPromise = null; reject(error); }
+        };
+        script.onerror = function () { script.remove(); state.rendererPromise = null; reject(new Error('The archive reader could not be loaded. Please try again.')); };
+        document.head.append(script);
+      });
+    }
+    return state.rendererPromise;
   }
 
   function renderFilters() {
@@ -208,7 +235,10 @@
       if (element.matches('h1, h2, h3, h4, h5, h6')) {
         const level = Number(element.tagName.slice(1));
         while (headings.length && headings[headings.length - 1].level >= level) headings.pop();
-        headings.push({ level: level, matches: normalized(element.textContent).includes(query) });
+        // Source headings include a count badge. Match the original title so
+        // a numeric query cannot select every entry just because of that count.
+        const title = level === 2 && section.dataset.title !== undefined ? section.dataset.title : element.textContent;
+        headings.push({ level: level, matches: normalized(title).includes(query) });
         element.hidden = false;
         return;
       }
@@ -264,17 +294,31 @@
     byId('no-results').hidden = !filtering || visibleEntries > 0 || (state.source === 'all' && introMatches > 0) || (notes && !notes.hidden);
   }
 
+  function updateEditionHeading(date) {
+    state.selected = date;
+    byId('edition-date').value = date;
+    byId('edition-label').textContent = formatDate(date);
+    document.title = 'Morning Digest · ' + date + ' — Bio × AI';
+    renderArchive();
+  }
+
+  function completeEdition(date) {
+    hydrateEdition();
+    const original = byId('markdown-link');
+    original.href = 'https://github.com/JoJoTsui/morning-digest/blob/main/editions/' + date + '.md';
+    original.target = '_blank';
+    original.rel = 'noopener noreferrer';
+    original.hidden = false;
+    showStatus('');
+  }
+
   async function loadEdition(date) {
     if (!isValidDate(date)) { showStatus('Choose a valid edition date in YYYY-MM-DD format.', true); return; }
     if (state.controller) state.controller.abort();
     const controller = new AbortController();
     state.controller = controller;
     const request = ++state.request;
-    state.selected = date;
-    byId('edition-date').value = date;
-    byId('edition-label').textContent = formatDate(date);
-    document.title = 'Morning Digest · ' + date + ' — Bio × AI';
-    renderArchive();
+    updateEditionHeading(date);
     byId('digest').replaceChildren();
     byId('reading-controls').hidden = true;
     byId('no-results').hidden = true;
@@ -282,18 +326,23 @@
     byId('digest').setAttribute('aria-busy', 'true');
     showStatus('Loading ' + formatDate(date) + '…');
     try {
-      const response = await root.fetch(new URL('editions/' + date + '.md', siteRoot), { signal: controller.signal });
-      if (!response.ok) throw new Error(response.status === 404 ? 'There is no published edition for this date. Try a recent edition or the full archive.' : 'This edition could not be loaded. Please try again.');
-      const markdown = await response.text();
+      let html = state.editions.get(date);
+      if (html === undefined) {
+        const result = await Promise.all([
+          root.fetch(new URL('editions/' + date + '.md', siteRoot), { signal: controller.signal }),
+          ensureRenderer()
+        ]);
+        const response = result[0];
+        if (!response.ok) throw new Error(response.status === 404 ? 'There is no published edition for this date. Try a recent edition or the full archive.' : 'This edition could not be loaded. Please try again.');
+        const markdown = await response.text();
+        if (request !== state.request) return;
+        if (!markdown.trim()) { showStatus('This edition is empty. Choose another date.'); return; }
+        html = renderEdition(markdown, result[1]);
+        state.editions.set(date, html);
+      }
       if (request !== state.request) return;
-      if (!markdown.trim()) { showStatus('This edition is empty. Choose another date.'); return; }
-      buildEdition(markdown);
-      const original = byId('markdown-link');
-      original.href = 'https://github.com/JoJoTsui/morning-digest/blob/main/editions/' + date + '.md';
-      original.target = '_blank';
-      original.rel = 'noopener noreferrer';
-      original.hidden = false;
-      showStatus('');
+      byId('digest').innerHTML = html;
+      completeEdition(date);
     } catch (error) {
       if (request !== state.request || error.name === 'AbortError') return;
       showStatus(error.message || 'This edition could not be loaded. Please try again.', true);
@@ -312,6 +361,7 @@
 
   async function start() {
     initializeTheme();
+    byId('date-form').hidden = false;
     byId('date-form').addEventListener('submit', function (event) { event.preventDefault(); navigate(byId('edition-date').value); });
     byId('search').addEventListener('input', applyFilters);
     document.addEventListener('keydown', function (event) {
@@ -322,7 +372,19 @@
       }
     });
     root.addEventListener('popstate', function () { const date = requestedDate() || state.dates[0]; if (date) loadEdition(date); });
-    try { state.renderer = createMarkdownRenderer(); } catch (error) { showStatus(error.message, true); return; }
+    const requested = requestedDate();
+    if (requested !== null && !isValidDate(requested)) { showStatus('This edition link has an invalid date. Choose a date or open a recent edition.', true); return; }
+    let initial;
+    try { initial = JSON.parse(byId('edition-data').textContent); } catch (_) { /* Unbuilt local templates can still use the archive. */ }
+    if (initial && isValidDate(initial.date) && Array.isArray(initial.dates) && initial.dates.every(isValidDate)) {
+      state.dates = initial.dates;
+      state.editions.set(initial.date, byId('digest').innerHTML);
+      updateEditionHeading(initial.date);
+      completeEdition(initial.date);
+      if (requested && requested !== initial.date) await loadEdition(requested);
+      return;
+    }
+    // Only an unbuilt local template needs the feed to discover its latest date.
     let feedError = false;
     try {
       const response = await root.fetch(new URL('feed.xml', siteRoot));
@@ -332,8 +394,6 @@
       state.dates = Array.from(new Set(Array.from(xml.querySelectorAll('item > guid')).map(function (guid) { return guid.textContent.trim(); }).filter(isValidDate))).sort().reverse().slice(0, 30);
     } catch (_) { feedError = true; }
     renderArchive();
-    const requested = requestedDate();
-    if (requested !== null && !isValidDate(requested)) { showStatus('This edition link has an invalid date. Choose a date or open a recent edition.', true); return; }
     const date = requested || state.dates[0];
     if (!date) { showStatus(feedError ? 'Recent editions could not be loaded. Enter an edition date above, or browse the full archive.' : 'No editions have been published yet. Check back after the next digest.'); return; }
     await loadEdition(date);
