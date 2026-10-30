@@ -6,6 +6,12 @@
 <description>Daily multi-source digest</description>
 <atom:link href="https://raw.githubusercontent.com/JoJoTsui/morning-digest/HEAD/feed.xml" rel="self" type="application/rss+xml"/>
 <item>
+<title>Morning digest — 2026-10-30</title>
+<link>https://github.com/JoJoTsui/morning-digest/blob/HEAD/editions/2026-10-30.md</link>
+<guid isPermaLink="false">2026-10-30</guid>
+<pubDate>Fri, 30 Oct 2026 00:00:00 +0000</pubDate>
+</item>
+<item>
 <title>Morning digest — 2026-10-29</title>
 <link>https://github.com/JoJoTsui/morning-digest/blob/HEAD/editions/2026-10-29.md</link>
 <guid isPermaLink="false">2026-10-29</guid>
