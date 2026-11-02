@@ -100,6 +100,12 @@ h1 { margin: 15px 0 4px; font-size: clamp(32px, 3.8vw, 49px); line-height: 1.2; 
 .source-filter[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--canvas); }
 .source-filter:hover { border-color: var(--accent); }
 .source-filter > span { opacity: .75; font-size: 10px; }
+.read-controls { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+.read-filter, .mark-all-read { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: transparent; font-size: 11px; color: var(--muted); }
+.read-filter[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--canvas); }
+.read-filter:hover:not(:disabled), .mark-all-read:hover:not(:disabled) { border-color: var(--accent); }
+.read-filter:disabled, .mark-all-read:disabled { cursor: default; opacity: .55; }
+.read-count { opacity: .75; font-size: 10px; }
 .filter-summary { margin: 13px 0 22px; color: var(--muted); font-size: 10px; }
 .status { padding: 25px 0; color: var(--muted); font-size: 13px; }
 .status.is-error { margin-top: 25px; padding: 20px; border: 1px solid var(--line); border-radius: 10px; background: var(--warning); color: var(--warning-ink); }
@@ -121,6 +127,13 @@ h1 { margin: 15px 0 4px; font-size: clamp(32px, 3.8vw, 49px); line-height: 1.2; 
 .prose ul, .prose ol { margin: 10px 0 0; padding-left: 20px; }
 .prose li { padding-left: 4px; margin: 10px 0; }
 .prose li::marker { color: var(--accent); font-size: .8em; }
+.readable-item { position: relative; padding-right: 2.2rem; }
+.read-toggle { position: absolute; top: .35rem; right: 0; display: inline-flex; align-items: center; justify-content: center; width: 1.4rem; height: 1.4rem; padding: 0; border: 1px solid transparent; border-radius: 50%; background: transparent; color: var(--muted); font-size: 11px; line-height: 1; opacity: .45; }
+.readable-item:hover .read-toggle, .read-toggle:focus-visible { opacity: 1; border-color: var(--line); }
+.readable-item.is-read { color: var(--muted); }
+.readable-item.is-read::marker { color: var(--muted); }
+.readable-item.is-read .read-toggle { opacity: .85; }
+.readable-item.is-read a { color: var(--muted); }
 .prose li > p { margin: 5px 0; }
 .prose a { color: var(--accent-ink); }
 .prose li > a:first-child { font-weight: 550; }
@@ -173,7 +186,7 @@ h1 { margin: 15px 0 4px; font-size: clamp(32px, 3.8vw, 49px); line-height: 1.2; 
   .edition-label { font-size: 12px; }
   .date-form { margin-top: 20px; }
   .reading-controls { padding-top: 22px; }
-  .source-filter { padding: 6px 8px; font-size: 10px; }
+  .source-filter, .read-filter, .mark-all-read { padding: 6px 8px; font-size: 10px; }
   .source-section, .highlights { padding: 20px 18px; margin-bottom: 18px; border-radius: 10px; }
   .prose h2 { font-size: 16px; }
   .prose p, .prose li { font-size: 13px; }
@@ -181,4 +194,4 @@ h1 { margin: 15px 0 4px; font-size: clamp(32px, 3.8vw, 49px); line-height: 1.2; 
 }
 @media (max-width: 380px) { .main, .sidebar { padding-left: 16px; padding-right: 16px; } h1 { font-size: 31px; } .hero-symbol { display: none; } .sidebar-footer { flex-wrap: wrap; } .date-form label { flex-basis: 100%; } }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
-@media print { .sidebar, .reading-controls, .date-form, .hero-symbol, .main-footer, .skip-link { display: none; } .layout { display: block; } .main { max-width: none; padding: 0; } body, .source-section, .highlights { color: #111; background: #fff; } .source-section, .highlights { break-inside: avoid; box-shadow: none; } }
+@media print { .sidebar, .reading-controls, .date-form, .hero-symbol, .main-footer, .skip-link, .read-toggle { display: none; } .layout { display: block; } .main { max-width: none; padding: 0; } body, .source-section, .highlights { color: #111; background: #fff; } .source-section, .highlights { break-inside: avoid; box-shadow: none; } .readable-item, .readable-item.is-read { padding-right: 0; opacity: 1; } .readable-item.is-read, .readable-item.is-read a, .readable-item.is-read::marker { color: #111; } }

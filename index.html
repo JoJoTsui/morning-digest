@@ -8,8 +8,8 @@
     <title>Bio × AI — Morning Digest</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23176a52'/%3E%3Ctext x='32' y='41' text-anchor='middle' fill='white' font-family='sans-serif' font-size='24'%3EB%C3%97A%3C/text%3E%3C/svg%3E">
     <link rel="alternate" type="application/rss+xml" title="Morning Digest" href="feed.xml">
-    <link rel="stylesheet" href="assets/style.css?v=b0c561d937fa">
-    <script src="assets/app.js?v=d9623c7be7f1" defer></script>
+    <link rel="stylesheet" href="assets/style.css?v=680a130ae6a0">
+    <script src="assets/app.js?v=5e89c44c35cf" defer></script>
     <script id="edition-data" type="application/json">{"date":"2026-11-02","dates":["2026-11-02","2026-11-01","2026-10-31","2026-10-30","2026-10-29","2026-10-28"]}</script>
   </head>
   <body>
@@ -40,52 +40,54 @@
           <div class="hero-title-row"><div><h1>Morning Digest<span class="title-period">.</span></h1><p id="edition-label" class="edition-label">November 2, 2026</p></div><span class="hero-symbol" aria-hidden="true">✳</span></div>
           <form id="date-form" class="date-form" hidden><label for="edition-date">Read an edition</label><input id="edition-date" type="date" required aria-label="Edition date"><button type="submit">Open <span aria-hidden="true">↗</span></button></form>
         </header>
-        <section id="reading-controls" class="reading-controls" aria-label="Filter this edition" hidden>
+        <section id="reading-controls" class="reading-controls" aria-label="Read and filter this edition" hidden>
           <div class="search-wrap"><span aria-hidden="true">⌕</span><label class="sr-only" for="search">Search this edition</label><input id="search" type="search" placeholder="Search this edition…" autocomplete="off"><kbd aria-hidden="true">/</kbd></div>
           <div id="source-filters" class="source-filters" aria-label="Filter by source"></div>
+          <div class="read-controls" role="group" aria-label="Reading status">
+            <button id="unread-filter" class="read-filter" type="button" aria-pressed="false">Unread only <span class="read-count">0</span></button>
+            <button id="mark-all-read" class="mark-all-read" type="button" disabled>Mark all read</button>
+          </div>
           <p id="filter-summary" class="filter-summary" aria-live="polite" aria-atomic="true"></p>
         </section>
         <p id="status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></p>
         <div id="digest" class="digest" aria-label="Edition content"><div class="edition-intro prose"><p>☀️ <strong>Morning digest — 2026-11-02</strong>
-🧬 Decoding Bio: 4 · 📑 BioML Digest (automated): 3 · 🐙 GitHub: 5</p>
+🧬 Decoding Bio: 4 · 📑 BioML Digest (automated): 3 · 🐙 GitHub: 3</p>
 </div><section class="highlights prose" data-title="📌 Today&#39;s highlights" data-count="3" aria-labelledby="section-0"><h2 id="section-0">📌 Today&#39;s highlights</h2><ul>
-<li><a href="https://doi.org/10.1073/pnas.2536965123?ref=biomldigest.com" target="_blank" rel="noopener noreferrer">A structure-aware generative AI framework for…</a></li>
-<li><a href="https://www.nature.com/articles/s41467-026-78143-2?ref=biomldigest.com" target="_blank" rel="noopener noreferrer">ProFormer: generalizable classification of…</a></li>
-<li><a href="https://doi.org/10.1002/prot.70190?ref=biomldigest.com" target="_blank" rel="noopener noreferrer">PNBind: Prediction of Nucleic Acid-Binding Sites Using…</a></li>
+<li data-read-key="l:https://doi.org/10.1073/pnas.2536965123"><a href="https://doi.org/10.1073/pnas.2536965123?ref=biomldigest.com" target="_blank" rel="noopener noreferrer">A structure-aware generative AI framework for…</a></li>
+<li data-read-key="l:https://nature.com/articles/s41467-026-78143-2"><a href="https://www.nature.com/articles/s41467-026-78143-2?ref=biomldigest.com" target="_blank" rel="noopener noreferrer">ProFormer: generalizable classification of…</a></li>
+<li data-read-key="l:https://doi.org/10.1002/prot.70190"><a href="https://doi.org/10.1002/prot.70190?ref=biomldigest.com" target="_blank" rel="noopener noreferrer">PNBind: Prediction of Nucleic Acid-Binding Sites Using…</a></li>
 </ul>
 </section><section class="source-section prose" data-title="🧬 Decoding Bio" data-count="4" aria-labelledby="section-1"><h2 id="section-1">🧬 Decoding Bio<span class="section-count" aria-label="4 entries">4</span></h2><h3>Latest</h3>
 <ul>
-<li><a href="https://r1therapeutics.com/newsroom/press-releases/r1-therapeutics-expands-series-a" target="_blank" rel="noopener noreferrer">R1 Therapeutics expands…</a></li>
-<li><a href="https://x.com/arcinstitute/status/2107158495749669171?s=20" target="_blank" rel="noopener noreferrer">Arc Institute releases their new PIE perturbation…</a></li>
-<li><a href="https://x.com/nc_frey/status/2115187081219846566?a=3FRmRUnHg1gYwHddZlk&amp;s=20" target="_blank" rel="noopener noreferrer">Anthropic announces July acquisition…</a></li>
-<li><a href="https://finance.yahoo.com/technology/live/anthropic-ipo-live-updates-frontier-ai-lab-discloses-revenue-and-risks-in-highly-anticipated-s-1-filing-141702607.html" target="_blank" rel="noopener noreferrer">Anthropic publicly files its S-1</a></li>
+<li data-read-key="l:https://r1therapeutics.com/newsroom/press-releases/r1-therapeutics-expands-series-a"><a href="https://r1therapeutics.com/newsroom/press-releases/r1-therapeutics-expands-series-a" target="_blank" rel="noopener noreferrer">R1 Therapeutics expands…</a></li>
+<li data-read-key="l:https://x.com/arcinstitute/status/2107158495749669171"><a href="https://x.com/arcinstitute/status/2107158495749669171?s=20" target="_blank" rel="noopener noreferrer">Arc Institute releases their new PIE perturbation…</a></li>
+<li data-read-key="l:https://x.com/nc_frey/status/2115187081219846566?a=3FRmRUnHg1gYwHddZlk"><a href="https://x.com/nc_frey/status/2115187081219846566?a=3FRmRUnHg1gYwHddZlk&amp;s=20" target="_blank" rel="noopener noreferrer">Anthropic announces July acquisition…</a></li>
+<li data-read-key="l:https://finance.yahoo.com/technology/live/anthropic-ipo-live-updates-frontier-ai-lab-discloses-revenue-and-risks-in-highly-anticipated-s-1-filing-141702607.html"><a href="https://finance.yahoo.com/technology/live/anthropic-ipo-live-updates-frontier-ai-lab-discloses-revenue-and-risks-in-highly-anticipated-s-1-filing-141702607.html" target="_blank" rel="noopener noreferrer">Anthropic publicly files its S-1</a></li>
 </ul>
 </section><section class="source-section prose" data-title="📑 BioML Digest (automated)" data-count="3" aria-labelledby="section-2"><h2 id="section-2">📑 BioML Digest (automated)<span class="section-count" aria-label="3 entries">3</span></h2><h3>Research papers</h3>
 <ul>
-<li><a href="https://doi.org/10.1073/pnas.2536965123?ref=biomldigest.com" target="_blank" rel="noopener noreferrer">A structure-aware generative AI framework for…</a></li>
-<li><a href="https://www.nature.com/articles/s41467-026-78143-2?ref=biomldigest.com" target="_blank" rel="noopener noreferrer">ProFormer: generalizable classification of…</a></li>
-<li><a href="https://doi.org/10.1002/prot.70190?ref=biomldigest.com" target="_blank" rel="noopener noreferrer">PNBind: Prediction of Nucleic Acid-Binding Sites Using…</a></li>
+<li data-read-key="l:https://doi.org/10.1073/pnas.2536965123"><a href="https://doi.org/10.1073/pnas.2536965123?ref=biomldigest.com" target="_blank" rel="noopener noreferrer">A structure-aware generative AI framework for…</a></li>
+<li data-read-key="l:https://nature.com/articles/s41467-026-78143-2"><a href="https://www.nature.com/articles/s41467-026-78143-2?ref=biomldigest.com" target="_blank" rel="noopener noreferrer">ProFormer: generalizable classification of…</a></li>
+<li data-read-key="l:https://doi.org/10.1002/prot.70190"><a href="https://doi.org/10.1002/prot.70190?ref=biomldigest.com" target="_blank" rel="noopener noreferrer">PNBind: Prediction of Nucleic Acid-Binding Sites Using…</a></li>
 </ul>
-</section><section class="source-section prose" data-title="🐙 GitHub" data-count="5" aria-labelledby="section-3"><h2 id="section-3">🐙 GitHub<span class="section-count" aria-label="5 grouped entries">5</span></h2><h3>🚀 Releases</h3>
+</section><section class="source-section prose" data-title="🐙 GitHub" data-count="3" aria-labelledby="section-3"><h2 id="section-3">🐙 GitHub<span class="section-count" aria-label="3 grouped entries">3</span></h2><h3>🚀 Releases</h3>
 <ul>
-<li><strong>COMBINE-lab/salmon</strong> — <a href="https://github.com/COMBINE-lab/salmon/releases/tag/v2.10.0" target="_blank" rel="noopener noreferrer">v2.10.0</a></li>
-<li><strong>jarrodwatts/claude-hud</strong> — <a href="https://github.com/jarrodwatts/claude-hud/releases/tag/v0.14.2" target="_blank" rel="noopener noreferrer">v0.14.2</a></li>
+<li data-read-key="l:https://github.com/jarrodwatts/claude-hud/releases/tag/v0.14.2"><strong>jarrodwatts/claude-hud</strong> — <a href="https://github.com/jarrodwatts/claude-hud/releases/tag/v0.14.2" target="_blank" rel="noopener noreferrer">v0.14.2</a></li>
 </ul>
 <h3>🔎 Projects to explore</h3>
 <ul>
-<li><strong>beenuar/AiSOC</strong> — <a href="https://github.com/beenuar/AiSOC" target="_blank" rel="noopener noreferrer">Open-source AI Security Operations Center: alert fusion…</a></li>
+<li data-read-key="l:https://github.com/beenuar/AiSOC"><strong>beenuar/AiSOC</strong> — <a href="https://github.com/beenuar/AiSOC" target="_blank" rel="noopener noreferrer">Open-source AI Security Operations Center: alert fusion…</a></li>
 </ul>
-<h3>🌐 Network activity</h3>
+<h3>💬 Watched discussions</h3>
 <ul>
-<li><strong>HKU-BAL/ClairS-TO</strong> — <a href="https://github.com/HKU-BAL/ClairS-TO" target="_blank" rel="noopener noreferrer">ranas-mukminov, bmwoolf forked; starred</a></li>
-<li><strong>cBioPortal/cBioLab</strong> — <a href="https://github.com/cBioPortal/cBioLab/pull/112" target="_blank" rel="noopener noreferrer">alisman opened/closed #112; opened/closed #116</a></li>
+<li data-read-key="l:https://github.com/HKU-BAL/ClairS-TO/pull/64"><strong>HKU-BAL/ClairS-TO</strong> — <a href="https://github.com/HKU-BAL/ClairS-TO/pull/64" target="_blank" rel="noopener noreferrer">#64 Run bgzip and tabix without a shell in…</a></li>
 </ul>
 </section><details class="selection-notes prose"><summary>Selection notes</summary><p>🗑️ Filtered out: 18 duplicate or previously reported items and 136 off-topic items and 71 outdated or invalid-date items and 5 items over the section cap (Decoding Bio).</p>
 <p>🗑️ Filtered out: 20 duplicate or previously reported items and 169 off-topic items and 331 outdated or invalid-date items and 92 items over the section cap (BioML Digest (automated)).</p>
-<p>🗑️ Filtered out: 1 duplicate or previously reported items (GitHub).</p>
+<p>🗑️ Filtered out: 3 duplicate or previously reported items (GitHub).</p>
 </details></div>
         <p id="no-results" class="empty-state" hidden>No matching entries in this edition. Try another search or source.</p>
-        <noscript><p class="empty-state">You are reading the latest edition. To open an older edition, <a href="https://github.com/JoJoTsui/morning-digest/tree/main/editions">browse the Markdown archive on GitHub</a>. JavaScript enables search and source filters.</p></noscript>
+        <noscript><p class="empty-state">You are reading the latest edition. To open an older edition, <a href="https://github.com/JoJoTsui/morning-digest/tree/main/editions">browse the Markdown archive on GitHub</a>. JavaScript enables search, source filters, and read marks.</p></noscript>
         <footer class="main-footer"><span>Bio × AI · Morning Digest</span><a id="markdown-link" hidden>Read original Markdown ↗</a><a class="back-top" href="#main">Back to top ↑</a></footer>
       </main>
     </div>
