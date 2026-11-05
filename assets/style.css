@@ -137,6 +137,8 @@ h1 { margin: 15px 0 4px; font-size: clamp(32px, 3.8vw, 49px); line-height: 1.2; 
 .prose li > p { margin: 5px 0; }
 .prose a { color: var(--accent-ink); }
 .prose li > a:first-child { font-weight: 550; }
+.prose a.source-credit { color: var(--muted); font-size: .88em; text-decoration-color: var(--line); }
+.prose a.source-credit:hover { color: var(--accent-ink); text-decoration-color: currentColor; }
 .prose img { display: block; max-width: min(100%, 430px); max-height: 260px; width: auto; height: auto; margin: 12px 0; border-radius: 6px; object-fit: contain; }
 .prose code { border: 1px solid var(--line); border-radius: 4px; background: var(--canvas); padding: 1px 4px; font-size: .85em; }
 .prose pre { max-width: 100%; overflow: auto; padding: 15px; border-radius: 7px; background: var(--canvas); }

@@ -16,10 +16,35 @@
     'fbclid', 'gclid', 'mc_cid', 'mc_eid', 'igshid', 's', 'si',
   ]);
 
+  function paperDoiFromUrl(url) {
+    let path;
+    try { path = decodeURIComponent(url.pathname); } catch (_) { return ''; }
+    const hostname = url.hostname.toLowerCase();
+    const host = hostname.replace(/^www\./, '');
+    let doi = '';
+    let match;
+    // Keep this recognized-path vocabulary aligned with digest/papers.py.
+    if (['doi.org', 'dx.doi.org', 'www.doi.org'].includes(hostname)) {
+      doi = path.replace(/^\/+/, '').replace(/^doi\s*:\s*/i, '').trim();
+    } else if (host === 'biorxiv.org' || host === 'medrxiv.org') {
+      match = path.match(/^\/content\/(10\.\d{4,9}\/.+?)(?:v\d+)?(?:\.full(?:\.pdf)?|\.abstract)?\/?$/);
+    } else if (['nature.com', 'link.springer.com', 'link.springernature.com'].includes(host)) {
+      match = path.match(/^\/(?:articles?|doi)\/(10\.\d{4,9}\/.+?)(?:\.pdf)?\/?$/);
+      if (!match && host === 'nature.com') {
+        const nature = path.match(/^\/articles\/((?:s\d{5}-[\w-]+|n(?:meth|bt)\.[\w.-]+))(?:\.pdf)?\/?$/);
+        if (nature) doi = '10.1038/' + nature[1].replace(/\.pdf$/, '');
+      }
+    }
+    doi = doi || (match ? match[1] : '');
+    return /^10\.\d{4,9}\/[^\s<>]+$/i.test(doi) ? doi.toLowerCase() : '';
+  }
+
   function normalizeReadUrl(value) {
     let url;
     try { url = new URL(String(value || '').trim()); } catch (_) { return ''; }
     if (!/^https?:$/.test(url.protocol)) return '';
+    const doi = paperDoiFromUrl(url);
+    if (doi) return 'https://doi.org/' + doi;
     let host = url.hostname.toLowerCase();
     if (host.indexOf('www.') === 0) host = host.slice(4);
     let path = url.pathname || '/';
@@ -61,6 +86,22 @@
     if (urls.length) return 'l:' + urls.join(' ');
     const words = normalizedReadText(text).slice(0, 300);
     return words ? 't:' + hashReadText(words) : '';
+  }
+
+  function migrateReadMarks(marks) {
+    const migrated = {};
+    Object.keys(marks || {}).forEach(function (key) {
+      const timestamp = marks[key];
+      if (typeof timestamp !== 'number' || !Number.isFinite(timestamp)) return;
+      let canonical = key;
+      if (key.startsWith('l:')) {
+        const links = key.slice(2).split(' ');
+        // An invalid old key must not become a mark for only part of a row.
+        if (links.every(function (link) { return Boolean(normalizeReadUrl(link)); })) canonical = readKeyForItem(links);
+      }
+      if (!Object.prototype.hasOwnProperty.call(migrated, canonical) || timestamp > migrated[canonical]) migrated[canonical] = timestamp;
+    });
+    return migrated;
   }
 
   function isSafeUrl(value) {
@@ -117,12 +158,32 @@
 
   function collectReadableLinks(tokens, links) {
     (tokens || []).forEach(function (token) {
-      if (token.type === 'link_open') {
+      if (token.type === 'link_open' && !token.attrGet('data-source-credit')) {
         const href = token.attrGet('href');
         if (href) links.push(href);
       }
       if (token.children) collectReadableLinks(token.children, links);
     });
+  }
+
+  function annotateSourceCredits(tokens) {
+    const credits = [];
+    (tokens || []).forEach(function (token, index) {
+      if (token.type === 'link_open') {
+        const marker = (token.attrGet('title') || '').match(/^digest-source:([\s\S]+)$/);
+        if (!marker || !marker[1].trim()) return;
+        const label = [];
+        for (let cursor = index + 1; cursor < tokens.length && tokens[cursor].type !== 'link_close'; cursor += 1) label.push(tokens[cursor]);
+        const name = inlineText(label).trim();
+        if (!name) return;
+        token.attrJoin('class', 'source-credit');
+        token.attrSet('data-source-credit', marker[1]);
+        token.attrs = token.attrs.filter(function (attribute) { return attribute[0] !== 'title'; });
+        credits.push({ id: marker[1], title: name });
+      }
+      if (token.children) credits.push.apply(credits, annotateSourceCredits(token.children));
+    });
+    return credits;
   }
 
   function annotateReadableItems(tokens) {
@@ -133,9 +194,11 @@
       while (end < tokens.length && !(tokens[end].type === 'list_item_close' && tokens[end].level === token.level)) end += 1;
       const links = [];
       const text = [];
+      const credits = [];
       for (let cursor = index + 1; cursor < end; cursor += 1) {
         const inner = tokens[cursor];
         if (inner.type === 'inline' && inner.children) {
+          credits.push.apply(credits, annotateSourceCredits(inner.children));
           text.push(inlineText(inner.children));
           collectReadableLinks(inner.children, links);
         } else if (inner.type === 'link_open') {
@@ -145,6 +208,11 @@
       }
       const key = readKeyForItem(links, text.join(' '));
       if (key) token.attrSet('data-read-key', key);
+      if (credits.length) {
+        token.attrSet('data-source-id', credits[0].id);
+        token.attrSet('data-source-name', credits[0].title);
+        token.attrSet('data-source-ids', JSON.stringify(Array.from(new Set(credits.map(function (credit) { return credit.id; })))));
+      }
       // A nested list belongs to its outer row; only the outer row is a card.
       index = end;
     }
@@ -191,7 +259,8 @@
       const classes = (section.highlight ? 'highlights' : 'source-section') + (section.wikipedia ? ' wikipedia-section' : '') + ' prose';
       const entryLabel = /\bGitHub\b/i.test(section.title) ? ' grouped entries' : ' entries';
       const badge = section.highlight ? '' : '<span class="section-count" aria-label="' + count + entryLabel + '">' + count + '</span>';
-      return '<section class="' + classes + '" data-title="' + escapeHtml(section.title) + '" data-count="' + count + '" aria-labelledby="' + section.id + '"><h2 id="' + section.id + '">' + escapeHtml(section.title) + badge + '</h2>' + renderBlocks(section.blocks) + '</section>';
+      const attributed = section.blocks.some(function (block) { return block.some(function (token) { return token.type === 'list_item_open' && token.attrGet('data-source-id'); }); });
+      return '<section class="' + classes + '" data-title="' + escapeHtml(section.title) + '" data-count="' + count + '"' + (attributed ? ' data-attributed="true"' : '') + ' aria-labelledby="' + section.id + '"><h2 id="' + section.id + '">' + escapeHtml(section.title) + badge + '</h2>' + renderBlocks(section.blocks) + '</section>';
     };
     const introduction = renderBlocks(intro);
     return (introduction.trim() ? '<div class="edition-intro prose">' + introduction + '</div>' : '') +
@@ -200,14 +269,14 @@
       sections.filter(function (section) { return section.wikipedia; }).map(renderSection).join('');
   }
 
-  if (typeof module === 'object' && module.exports) module.exports = { createMarkdownRenderer, renderEdition, escapeHtml, isSafeUrl, isValidDate, normalizeReadUrl, readKeyForItem };
+  if (typeof module === 'object' && module.exports) module.exports = { createMarkdownRenderer, renderEdition, escapeHtml, isSafeUrl, isValidDate, normalizeReadUrl, readKeyForItem, migrateReadMarks, loadReadMarks };
   if (!root.document) return;
 
   const document = root.document;
   const byId = function (id) { return document.getElementById(id); };
   const siteRoot = new URL('.', root.location.href);
   const state = {
-    dates: [], selected: '', source: 'all', sections: [], controller: null,
+    dates: [], selected: '', source: 'all', sections: [], sources: [], controller: null,
     request: 0, renderer: null, rendererPromise: null, editions: new Map(),
     readMarks: {}, unreadOnly: false,
   };
@@ -220,6 +289,13 @@
     if (element.dataset && element.dataset.searchText !== undefined) return element.dataset.searchText;
     const images = Array.from(element.querySelectorAll('img')).map(function (image) { return image.alt; }).join(' ');
     return normalized(element.textContent + ' ' + images);
+  }
+  function rowSources(row) {
+    const sources = new Map();
+    row.querySelectorAll('a[data-source-credit]').forEach(function (link) {
+      sources.set(link.dataset.sourceCredit, { id: 'source:' + link.dataset.sourceCredit, title: link.textContent });
+    });
+    return Array.from(sources.values());
   }
   function editionUrl(date) { const url = new URL(siteRoot); url.searchParams.set('date', date); return url; }
   function showStatus(message, error) {
@@ -244,13 +320,16 @@
     return pruned;
   }
 
-  function loadReadMarks() {
-    const storage = readStorage();
+  function loadReadMarks(storage = readStorage()) {
     if (!storage) return {};
     try {
       const parsed = JSON.parse(storage.getItem(READ_STORAGE_KEY) || '{}');
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
-      return pruneReadMarks(parsed);
+      const migrated = pruneReadMarks(migrateReadMarks(parsed));
+      if (JSON.stringify(migrated) !== JSON.stringify(parsed)) {
+        try { storage.setItem(READ_STORAGE_KEY, JSON.stringify(migrated)); } catch (_) { /* Read marks still migrate for this visit when storage is read-only. */ }
+      }
+      return migrated;
     } catch (_) { return {}; }
   }
 
@@ -342,7 +421,7 @@
     const target = event.target;
     if (!target || !target.closest) return;
     const link = target.closest('a[href]');
-    if (!link) return;
+    if (!link || link.hasAttribute('data-source-credit')) return;
     const row = link.closest('.readable-item');
     if (!row || !/^https?:\/\//i.test(link.getAttribute('href') || '')) return;
     setRead(row.dataset.readKey, true);
@@ -406,8 +485,22 @@
     state.unreadOnly = false;
     byId('search').value = '';
     state.sections = Array.from(byId('digest').querySelectorAll('.source-section, .highlights')).map(function (element) {
-      return { id: element.querySelector('h2').id, title: element.dataset.title, element: element, highlight: element.classList.contains('highlights'), count: Number(element.dataset.count) };
+      return { id: element.querySelector('h2').id, title: element.dataset.title, element: element, highlight: element.classList.contains('highlights'), attributed: element.dataset.attributed === 'true', count: Number(element.dataset.count) };
     });
+    const sources = new Map();
+    state.sections.filter(function (section) { return !section.highlight; }).forEach(function (section) {
+      if (!section.attributed) {
+        sources.set(section.id, { id: section.id, title: section.title, count: section.count });
+        return;
+      }
+      section.element.querySelectorAll('li[data-source-id]').forEach(function (row) {
+        rowSources(row).forEach(function (source) {
+          if (!sources.has(source.id)) sources.set(source.id, { id: source.id, title: source.title, count: 0 });
+          sources.get(source.id).count += 1;
+        });
+      });
+    });
+    state.sources = Array.from(sources.values());
     decorateReadableItems();
     renderFilters();
     applyFilters();
@@ -433,8 +526,7 @@
   function renderFilters() {
     const filters = byId('source-filters');
     filters.replaceChildren();
-    const sources = state.sections.filter(function (section) { return !section.highlight; });
-    const entries = [{ id: 'all', title: 'All sources', count: null }].concat(sources);
+    const entries = [{ id: 'all', title: 'All sources', count: null }].concat(state.sources);
     entries.forEach(function (source) {
       const button = document.createElement('button');
       button.type = 'button';
@@ -453,7 +545,7 @@
     byId('reading-controls').hidden = false;
   }
 
-  function filterSection(section, query) {
+  function filterSection(section, query, selectedSource) {
     const children = Array.from(section.children);
     const headings = [];
     let visible = 0;
@@ -473,13 +565,14 @@
         let matchingItems = 0;
         Array.from(element.children).forEach(function (item) {
           const read = state.unreadOnly && item.classList.contains('readable-item') && isRead(item.dataset.readKey);
-          item.hidden = read || (Boolean(needle) && !searchableText(item).includes(needle));
+          const wrongSource = selectedSource && !rowSources(item).some(function (source) { return source.id === selectedSource; });
+          item.hidden = Boolean(wrongSource) || read || (Boolean(needle) && !searchableText(item).includes(needle));
           if (!item.hidden) matchingItems += 1;
         });
         element.hidden = matchingItems === 0;
         visible += matchingItems;
       } else {
-        element.hidden = Boolean(needle) && !searchableText(element).includes(needle);
+        element.hidden = Boolean(selectedSource) || (Boolean(needle) && !searchableText(element).includes(needle));
         if (!element.hidden && (element.textContent.trim() || element.querySelector('img'))) visible += 1;
       }
     });
@@ -500,12 +593,21 @@
   function applyFilters() {
     const query = normalized(byId('search').value);
     let visibleEntries = 0;
-    let visibleSources = 0;
+    const visibleSources = new Set();
     state.sections.forEach(function (section) {
-      const allowed = state.source === 'all' || section.id === state.source;
-      const matches = filterSection(section.element, query);
+      const selectedSource = state.source.startsWith('source:') ? state.source : '';
+      const allowed = state.source === 'all' || section.id === state.source || (!section.highlight && section.attributed && Boolean(selectedSource));
+      const matches = filterSection(section.element, query, section.attributed ? selectedSource : '');
       section.element.hidden = !allowed || matches === 0;
-      if (!section.element.hidden) { visibleEntries += matches; if (!section.highlight) visibleSources += 1; }
+      if (!section.element.hidden) {
+        visibleEntries += matches;
+        if (!section.highlight) {
+          if (section.attributed) section.element.querySelectorAll('li[data-source-id]').forEach(function (row) {
+            if (!row.hidden) rowSources(row).forEach(function (source) { if (state.source === 'all' || state.source === source.id) visibleSources.add(source.id); });
+          });
+          else visibleSources.add(section.id);
+        }
+      }
     });
     const intro = byId('digest').querySelector('.edition-intro');
     let introMatches = 0;
@@ -517,7 +619,7 @@
     if (notes) notes.hidden = state.source !== 'all' || (Boolean(query) && !normalized(notes.textContent).includes(query));
     byId('source-filters').querySelectorAll('button').forEach(function (button) { button.setAttribute('aria-pressed', button.dataset.source === state.source ? 'true' : 'false'); });
     const filtering = Boolean(query) || state.source !== 'all' || state.unreadOnly;
-    byId('filter-summary').textContent = filtering ? visibleEntries + ' matching ' + (visibleEntries === 1 ? 'entry' : 'entries') + ' · ' + visibleSources + (visibleSources === 1 ? ' source' : ' sources') : 'Search and source filters apply to this edition.';
+    byId('filter-summary').textContent = filtering ? visibleEntries + ' matching ' + (visibleEntries === 1 ? 'entry' : 'entries') + ' · ' + visibleSources.size + (visibleSources.size === 1 ? ' source' : ' sources') : 'Search and source filters apply to this edition.';
     const noResults = byId('no-results');
     noResults.textContent = state.unreadOnly
       ? 'No unread entries match this view. Turn off Unread only to see everything.'
